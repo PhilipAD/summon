@@ -1,6 +1,10 @@
+![SUMMON](assets/banner.png)
+
 # Hermes Agent "Summon" Plugin
 
 Summon external AI agents mid-conversation and incorporate their responses naturally.
+
+**Persistent mode:** start a session with `>claude write me a script` and every message after goes to Claude until you `@hermes` to step back in.
 
 ## Quick Start
 
