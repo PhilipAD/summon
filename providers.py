@@ -7,6 +7,9 @@ interface.
 
 from __future__ import annotations
 
+import os
+import shutil
+import subprocess
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Optional
@@ -456,10 +459,57 @@ class GoogleProvider(AgentProvider):
 
 
 # ---------------------------------------------------------------------------
+# Claude Code (local CLI)
+# ---------------------------------------------------------------------------
+
+
+class ClaudeCodeProvider(AgentProvider):
+    name = 'claude_code'
+    supported_aliases = ['claude', 'claude-code', 'sonnet', 'anthropic', 'claude-sonnet', 'claude_code']
+
+    def call(self, query: str, context: list[dict], model: Optional[str] = None) -> str:
+        # Check claude CLI is available
+        cli_path = shutil.which('claude') or os.path.expanduser('~/.local/bin/claude')
+        if not os.path.exists(cli_path):
+            raise SummonAuthError(
+                'Claude Code CLI not found. Install: https://docs.anthropic.com/en/docs/claude-code/overview'
+            )
+
+        # Build a prompt with conversation context
+        system_prompt = (
+            "You are a summoned AI agent. Answer the user's query directly. "
+            "Do not ask follow-up questions. Be concise but complete."
+        )
+
+        # Format conversation history
+        history_text = ''
+        for msg in context:
+            role = msg.get('role', 'user')
+            content = msg.get('content', '')
+            history_text += f'[{role}]: {content}\n'
+
+        full_prompt = f'{system_prompt}\n\n[Conversation history]:\n{history_text}\n\n[Current query]:\n{query}'
+
+        # Run claude --print (non-interactive)
+        result = subprocess.run(
+            [cli_path, '--print', '--model', 'sonnet-4-7-2025', '-p', full_prompt],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+        if result.returncode != 0:
+            raise SummonProviderError(f'Claude Code CLI error: {result.stderr.strip()}')
+
+        return result.stdout.strip()
+
+
+# ---------------------------------------------------------------------------
 # Provider factory
 # ---------------------------------------------------------------------------
 
 _ALL_PROVIDERS: list[AgentProvider] = [
+    ClaudeCodeProvider(),
     AnthropicProvider(),
     XAIProvider(),
     PerplexityProvider(),
