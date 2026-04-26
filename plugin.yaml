@@ -1,0 +1,15 @@
+name: summon
+version: 1.0.0
+description: >-
+  Summon external AI agents (Claude, Grok, Perplexity, GPT, DeepSeek, Gemini)
+  mid-conversation via >agent query syntax. Agents receive full session context.
+  Each plugin hook intercepts the summon pattern, calls the external provider,
+  and injects the response into the conversation so the main Hermes agent sees it
+  in subsequent turns.
+author: NousResearch
+kind: standalone
+hooks:
+  - pre_gateway_dispatch
+  - pre_llm_call
+provides_tools:
+  - summon_agent
